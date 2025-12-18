@@ -1,0 +1,40 @@
+---
+
+- name: Check if gcloud is already installed
+  stat:
+    path: /usr/local/google-cloud-sdk/bin/gcloud
+  register: gcloud_exists
+
+- name: Download Google Cloud CLI
+  get_url:
+    url: "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz"
+    dest: "/tmp/google-cloud-cli.tar.gz"
+    mode: '0644'
+  become: true
+  when: not gcloud_exists.stat.exists
+
+- name: Extract Google Cloud CLI
+  unarchive:
+    src: "/tmp/google-cloud-cli.tar.gz"
+    dest: "/usr/local"
+    remote_src: yes
+  become: true
+  when: not gcloud_exists.stat.exists
+
+- name: Install Google Cloud CLI
+  command: "/usr/local/google-cloud-sdk/install.sh --quiet --path-update true"
+  become: true
+  when: not gcloud_exists.stat.exists
+
+- name: Create gcloud symlink
+  file:
+    src: "/usr/local/google-cloud-sdk/bin/gcloud"
+    dest: "/usr/local/bin/gcloud"
+    state: link
+  become: true
+
+- name: Remove installer archive
+  file:
+    path: "/tmp/google-cloud-cli.tar.gz"
+    state: absent
+  become: true
